@@ -1,64 +1,120 @@
-import { useState } from 'react';
+import { Component } from 'react';
+import axios from 'axios';
 
-const SignUpPage = () => {
-  const [disabled, setDisabled] = useState(true);
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [passwordRepeat, setPasswordRepeat] = useState('');
-
-  const onChangeUsername = (e) => {
-    setUsername(e.target.value);
+class SignUpPage extends Component {
+  state = {
+    username: '',
+    email: '',
+    password: '',
+    passwordRepeat: '',
+    apiProgress: false,
+    signUpSuccess: false,
   };
 
-  const onChangeEmail = (e) => {
-    setEmail(e.target.value);
-  };
-
-  const onChangePassword = (e) => {
-    setPassword(e.target.value);
-    setDisabled(password === passwordRepeat);
-  };
-  const onChangePasswordRepeat = (e) => {
-    setPasswordRepeat(e.target.value);
-    setDisabled(password === passwordRepeat);
-  };
-
-  const submit = (e) => {
-    e.preventDefault();
-    const body = { username, email, password };
-    fetch('http://localhost:8080/api/1.0/users', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
+  onChange = (event) => {
+    const { id, value } = event.target;
+    this.setState({
+      [id]: value,
     });
-    // http://localhost:8080/api/1.0/users
-    // axios.post('/api/1.0/users', body);
   };
-  return (
-    <div>
-      <h1>Sign Up</h1>
-      <form>
-        <label htmlFor='username'>Username</label>
-        <input id='username' onChange={onChangeUsername} />
-        <label htmlFor='email'>E-mail</label>
-        <input id='email' onChange={onChangeEmail} />
-        <label htmlFor='password'>Password</label>
-        <input id='password' type='password' onChange={onChangePassword} />
-        <label htmlFor='passwordRepeat'>Password Repeat</label>
-        <input
-          id='passwordRepeat'
-          type='password'
-          onChange={onChangePasswordRepeat}
-        />
-        <button disabled={disabled} onClick={submit}>
-          Sign Up
-        </button>
-      </form>
-    </div>
-  );
-};
+
+  submit = async (event) => {
+    event.preventDefault();
+    const { username, email, password } = this.state;
+    const body = {
+      username,
+      email,
+      password,
+    };
+    this.setState({ apiProgress: true });
+    try {
+      await axios.post('/api/1.0/users', body);
+      this.setState({ signUpSuccess: true });
+    } catch (error) {}
+  };
+
+  render() {
+    let disabled = true;
+    const { password, passwordRepeat, apiProgress, signUpSuccess } = this.state;
+    if (password && passwordRepeat) {
+      disabled = password !== passwordRepeat;
+    }
+    return (
+      <div className='col-lg-6 offset-lg-3 col-md-8 offset-md-2'>
+        {!signUpSuccess && (
+          <form className='card mt-5' data-testid='form-sign-up'>
+            <div className='card-header'>
+              <h1 className='text-center'>Sign Up</h1>
+            </div>
+            <div className='card-body'>
+              <div className='mb-3'>
+                <label htmlFor='username' className='form-label'>
+                  Username
+                </label>
+                <input
+                  id='username'
+                  className='form-control'
+                  onChange={this.onChange}
+                />
+              </div>
+              <div className='mb-3'>
+                <label className='form-label' htmlFor='email'>
+                  E-mail
+                </label>
+                <input
+                  className='form-control'
+                  id='email'
+                  onChange={this.onChange}
+                />
+              </div>
+              <div className='mb-3'>
+                <label className='form-label' htmlFor='password'>
+                  Password
+                </label>
+                <input
+                  className='form-control'
+                  id='password'
+                  type='password'
+                  onChange={this.onChange}
+                />
+              </div>
+              <div className='mb-3'>
+                <label className='form-label' htmlFor='passwordRepeat'>
+                  Password Repeat
+                </label>
+                <input
+                  className='form-control'
+                  id='passwordRepeat'
+                  type='password'
+                  onChange={this.onChange}
+                />
+              </div>
+              <div className='text-center'>
+                <button
+                  className='btn btn-primary'
+                  disabled={disabled || apiProgress}
+                  onClick={(e) => this.submit(e)}
+                >
+                  {apiProgress && (
+                    <span
+                      className='spinner-border spinner-border-sm'
+                      role='status'
+                    ></span>
+                  )}
+                  Sign Up
+                </button>
+              </div>
+            </div>
+          </form>
+        )}
+        {signUpSuccess && (
+          <div className='alert alert-success mt-3'>
+            Please check your e-mail to activate your account
+          </div>
+        )}
+      </div>
+    );
+  }
+}
 
 export default SignUpPage;
