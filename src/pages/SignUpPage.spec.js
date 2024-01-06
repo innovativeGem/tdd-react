@@ -66,6 +66,7 @@ describe('Sign Up Page', () => {
     let counter = 0;
     // Setup MSW server
     const server = setupServer(
+      // Mock API call to intercept POST request
       http.post('/api/1.0/users', async ({ request }) => {
         requestBody = await request.json();
         counter++;
@@ -115,7 +116,7 @@ describe('Sign Up Page', () => {
       });
     });
 
-    fit('disables button for ongoing api call', async () => {
+    it('disables button for ongoing api call', async () => {
       setup();
       userEvent.click(button);
       userEvent.click(button);
@@ -154,6 +155,23 @@ describe('Sign Up Page', () => {
       await waitFor(() => {
         expect(form).not.toBeInTheDocument();
       });
+    });
+
+    fit('displays validation errors for invalid username', async () => {
+      server.use(
+        http.post('/api/1.0/users', () => {
+          const responseBody = {
+            validationErrors: { username: 'Username cannot be null' },
+          };
+          return HttpResponse.json(responseBody, { status: 400 });
+        })
+      );
+      setup();
+      userEvent.click(button);
+      const validationError = await screen.findByText(
+        'Username cannot be null'
+      );
+      expect(validationError).toBeInTheDocument();
     });
   });
 });
