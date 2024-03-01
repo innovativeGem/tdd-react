@@ -32,13 +32,10 @@ class SignUpPage extends Component {
       await axios.post('/api/1.0/users', body);
       this.setState({ signUpSuccess: true });
     } catch (error) {
-      console.log('error: ', error);
-      // console.log('error.response: ', error.response);
       if (error.response.status === 400) {
-        console.log('error.response: ', error.response);
-        console.log('error.response.data: ', error.response.data);
         this.setState({ errors: error.response.data.validationErrors });
       }
+      this.setState({ apiProgress: false });
     }
   };
 
@@ -66,7 +63,7 @@ class SignUpPage extends Component {
                   className='form-control'
                   onChange={this.onChange}
                 />
-                <span>{errors?.username}</span>
+                <span className='text-red-500'>{errors?.username}</span>
               </div>
               <div className='mb-3'>
                 <label className='form-label' htmlFor='email'>

@@ -2,7 +2,7 @@ import SignUpPage from './SignUpPage';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { setupServer } from 'msw/node';
-import { http, HttpResponse } from 'msw';
+import { rest } from 'msw';
 
 describe('Sign Up Page', () => {
   describe('Layout', () => {
@@ -67,17 +67,16 @@ describe('Sign Up Page', () => {
     // Setup MSW server
     const server = setupServer(
       // Mock API call to intercept POST request
-      http.post('/api/1.0/users', async ({ request }) => {
-        requestBody = await request.json();
-        counter++;
-        return new HttpResponse(null, {
-          status: 200,
-        });
+      rest.post('/api/1.0/users', (req, res, ctx) => {
+        requestBody = req.body;
+        counter += 1;
+        return res(ctx.status(200));
       })
     );
 
     beforeEach(() => {
       counter = 0;
+      server.resetHandlers();
     });
 
     beforeAll(() => server.listen());
@@ -157,13 +156,15 @@ describe('Sign Up Page', () => {
       });
     });
 
-    fit('displays validation errors for invalid username', async () => {
+    it('displays validation errors for invalid username', async () => {
       server.use(
-        http.post('/api/1.0/users', () => {
-          const responseBody = {
-            validationErrors: { username: 'Username cannot be null' },
-          };
-          return HttpResponse.json(responseBody, { status: 400 });
+        rest.post('/api/1.0/users', (req, res, ctx) => {
+          return res(
+            ctx.status(400),
+            ctx.json({
+              validationErrors: { username: 'Username cannot be null' },
+            })
+          );
         })
       );
       setup();
@@ -172,6 +173,24 @@ describe('Sign Up Page', () => {
         'Username cannot be null'
       );
       expect(validationError).toBeInTheDocument();
+    });
+
+    it('hides spinner and enables button after response received', async () => {
+      server.use(
+        rest.post('/api/1.0/users', (req, res, ctx) => {
+          return res(
+            ctx.status(400),
+            ctx.json({
+              validationErrors: { username: 'Username cannot be null' },
+            })
+          );
+        })
+      );
+      setup();
+      userEvent.click(button);
+      await screen.findByText('Username cannot be null');
+      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+      expect(button).toBeEnabled();
     });
   });
 });
