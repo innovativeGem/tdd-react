@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { setupServer } from 'msw/node';
 import { rest } from 'msw';
+import '../locale/i18n';
 
 describe('Sign Up Page', () => {
   describe('Layout', () => {
@@ -62,7 +63,7 @@ describe('Sign Up Page', () => {
   });
   describe('Interactions', () => {
     let requestBody;
-    let button;
+    let button, usernameInput, emailInput, passwordInput, passwordRepeatInput;
     let counter = 0;
     // Setup MSW server
     const server = setupServer(
@@ -84,10 +85,10 @@ describe('Sign Up Page', () => {
 
     const setup = () => {
       render(<SignUpPage />);
-      const usernameInput = screen.getByLabelText('Username');
-      const emailInput = screen.getByLabelText('E-mail');
-      const passwordInput = screen.getByLabelText('Password');
-      const passwordRepeatInput = screen.getByLabelText('Password Repeat');
+      usernameInput = screen.getByLabelText('Username');
+      emailInput = screen.getByLabelText('E-mail');
+      passwordInput = screen.getByLabelText('Password');
+      passwordRepeatInput = screen.getByLabelText('Password Repeat');
       userEvent.type(usernameInput, 'user1');
       userEvent.type(emailInput, 'user1@mail.com');
       userEvent.type(passwordInput, 'P4ssword');
@@ -156,35 +157,33 @@ describe('Sign Up Page', () => {
       });
     });
 
-    it('displays validation errors for invalid username', async () => {
-      server.use(
-        rest.post('/api/1.0/users', (req, res, ctx) => {
-          return res(
-            ctx.status(400),
-            ctx.json({
-              validationErrors: { username: 'Username cannot be null' },
-            })
-          );
-        })
-      );
+    const generateValidationError = (field, message) => {
+      return rest.post('/api/1.0/users', (req, res, ctx) => {
+        return res(
+          ctx.status(400),
+          ctx.json({
+            validationErrors: { [field]: [message] },
+          })
+        );
+      });
+    };
+
+    it.each`
+      field         | message
+      ${'username'} | ${'Username cannot be null'}
+      ${'email'}    | ${'E-mail cannot be null'}
+      ${'password'} | ${'Password cannot be null'}
+    `('displays $message for $field', async ({ field, message }) => {
+      server.use(generateValidationError(field, message));
       setup();
       userEvent.click(button);
-      const validationError = await screen.findByText(
-        'Username cannot be null'
-      );
+      const validationError = await screen.findByText(message);
       expect(validationError).toBeInTheDocument();
     });
 
     it('hides spinner and enables button after response received', async () => {
       server.use(
-        rest.post('/api/1.0/users', (req, res, ctx) => {
-          return res(
-            ctx.status(400),
-            ctx.json({
-              validationErrors: { username: 'Username cannot be null' },
-            })
-          );
-        })
+        generateValidationError('username', 'Username cannot be null')
       );
       setup();
       userEvent.click(button);
@@ -192,5 +191,30 @@ describe('Sign Up Page', () => {
       expect(screen.queryByRole('status')).not.toBeInTheDocument();
       expect(button).toBeEnabled();
     });
+
+    it('displays password mismatch message when passwords are not same', () => {
+      setup();
+      userEvent.type(passwordInput, 'P4ssword');
+      userEvent.type(passwordRepeatInput, 'AnotherP4ssword');
+      const validationError = screen.queryByText('Password mismatch');
+      expect(validationError).toBeInTheDocument();
+    });
+
+    it.each`
+      field         | message                      | label
+      ${'username'} | ${'Username cannot be null'} | ${'Username'}
+      ${'email'}    | ${'E-mail cannot be null'}   | ${'E-mail'}
+      ${'password'} | ${'Password cannot be null'} | ${'Password'}
+    `(
+      'clears validation errors when $field is upadated',
+      async ({ field, message, label }) => {
+        server.use(generateValidationError(field, message));
+        setup();
+        userEvent.click(button);
+        const validationErrors = await screen.findByText(message);
+        userEvent.type(screen.getByLabelText(label), 'updated');
+        expect(validationErrors).not.toBeInTheDocument();
+      }
+    );
   });
 });

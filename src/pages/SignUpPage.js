@@ -1,5 +1,7 @@
 import { Component } from 'react';
 import axios from 'axios';
+import Input from '../components/Input';
+import { withTranslation } from 'react-i18next';
 
 class SignUpPage extends Component {
   state = {
@@ -14,8 +16,11 @@ class SignUpPage extends Component {
 
   onChange = (event) => {
     const { id, value } = event.target;
+    const errorCopy = { ...this.state.errors };
+    delete errorCopy[id];
     this.setState({
       [id]: value,
+      errors: errorCopy,
     });
   };
 
@@ -40,63 +45,51 @@ class SignUpPage extends Component {
   };
 
   render() {
+    const { t } = this.props;
     let disabled = true;
     const { password, passwordRepeat, apiProgress, signUpSuccess, errors } =
       this.state;
     if (password && passwordRepeat) {
       disabled = password !== passwordRepeat;
     }
+
+    const passwordMismatch =
+      password !== passwordRepeat ? 'Password mismatch' : '';
+
     return (
       <div className='col-lg-6 offset-lg-3 col-md-8 offset-md-2'>
         {!signUpSuccess && (
           <form className='card mt-5' data-testid='form-sign-up'>
             <div className='card-header'>
-              <h1 className='text-center'>Sign Up</h1>
+              <h1 className='text-center'>{t('signUp')}</h1>
             </div>
             <div className='card-body'>
-              <div className='mb-3'>
-                <label htmlFor='username' className='form-label'>
-                  Username
-                </label>
-                <input
-                  id='username'
-                  className='form-control'
-                  onChange={this.onChange}
-                />
-                <span className='text-red-500'>{errors?.username}</span>
-              </div>
-              <div className='mb-3'>
-                <label className='form-label' htmlFor='email'>
-                  E-mail
-                </label>
-                <input
-                  className='form-control'
-                  id='email'
-                  onChange={this.onChange}
-                />
-              </div>
-              <div className='mb-3'>
-                <label className='form-label' htmlFor='password'>
-                  Password
-                </label>
-                <input
-                  className='form-control'
-                  id='password'
-                  type='password'
-                  onChange={this.onChange}
-                />
-              </div>
-              <div className='mb-3'>
-                <label className='form-label' htmlFor='passwordRepeat'>
-                  Password Repeat
-                </label>
-                <input
-                  className='form-control'
-                  id='passwordRepeat'
-                  type='password'
-                  onChange={this.onChange}
-                />
-              </div>
+              <Input
+                id='username'
+                label={t('username')}
+                onChange={this.onChange}
+                help={errors?.username}
+              />
+              <Input
+                id='email'
+                label={t('email')}
+                onChange={this.onChange}
+                help={errors?.email}
+              />
+              <Input
+                id='password'
+                label={t('password')}
+                type='password'
+                onChange={this.onChange}
+                help={errors?.password}
+              />
+              <Input
+                id='passwordRepeat'
+                label={t('passwordRepeat')}
+                type='password'
+                onChange={this.onChange}
+                help={passwordMismatch}
+              />
               <div className='text-center'>
                 <button
                   className='btn btn-primary'
@@ -109,7 +102,7 @@ class SignUpPage extends Component {
                       role='status'
                     ></span>
                   )}
-                  Sign Up
+                  {t('signUp')}
                 </button>
               </div>
             </div>
@@ -125,4 +118,6 @@ class SignUpPage extends Component {
   }
 }
 
-export default SignUpPage;
+const SignUpPageWithTranslation = withTranslation()(SignUpPage);
+
+export default SignUpPageWithTranslation;
