@@ -1,9 +1,18 @@
 import SignUpPage from './SignUpPage';
-import { render, screen, waitFor } from '@testing-library/react';
+import {
+  render,
+  screen,
+  waitFor,
+  act,
+  waitForElementToBeRemoved,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { setupServer } from 'msw/node';
 import { rest } from 'msw';
-import '../locale/i18n';
+import i18n from '../locale/i18n';
+import en from '../locale/en.json';
+import tr from '../locale/tr.json';
+import LanguageSelector from '../components/LanguageSelector';
 
 describe('Sign Up Page', () => {
   describe('Layout', () => {
@@ -61,28 +70,31 @@ describe('Sign Up Page', () => {
       expect(button).toBeDisabled();
     });
   });
+
+  let requestBody;
+  let button, usernameInput, emailInput, passwordInput, passwordRepeatInput;
+  let counter = 0;
+  let acceptLanguageHeader;
+  // Setup MSW server
+  const server = setupServer(
+    // Mock API call to intercept POST request
+    rest.post('/api/1.0/users', (req, res, ctx) => {
+      requestBody = req.body;
+      counter += 1;
+      acceptLanguageHeader = req.headers.get('Accept-Language');
+      return res(ctx.status(200));
+    })
+  );
+
+  beforeEach(() => {
+    counter = 0;
+    server.resetHandlers();
+  });
+
+  beforeAll(() => server.listen());
+  afterAll(() => server.close());
+
   describe('Interactions', () => {
-    let requestBody;
-    let button, usernameInput, emailInput, passwordInput, passwordRepeatInput;
-    let counter = 0;
-    // Setup MSW server
-    const server = setupServer(
-      // Mock API call to intercept POST request
-      rest.post('/api/1.0/users', (req, res, ctx) => {
-        requestBody = req.body;
-        counter += 1;
-        return res(ctx.status(200));
-      })
-    );
-
-    beforeEach(() => {
-      counter = 0;
-      server.resetHandlers();
-    });
-
-    beforeAll(() => server.listen());
-    afterAll(() => server.close());
-
     const setup = () => {
       render(<SignUpPage />);
       usernameInput = screen.getByLabelText('Username');
@@ -216,5 +228,109 @@ describe('Sign Up Page', () => {
         expect(validationErrors).not.toBeInTheDocument();
       }
     );
+  });
+  describe('Internationalization', () => {
+    let turkishToggle, englishToggle, passwordInput, passwordRepeatInput;
+
+    const setup = () => {
+      render(
+        <>
+          <SignUpPage />
+          <LanguageSelector />
+        </>
+      );
+      turkishToggle = screen.getByTitle('Türkçe');
+      englishToggle = screen.getByTitle('English');
+      passwordInput = screen.getByLabelText(en.password);
+      passwordRepeatInput = screen.getByLabelText(en.passwordRepeat);
+    };
+
+    afterEach(() => {
+      act(() => {
+        i18n.changeLanguage('en');
+      });
+    });
+
+    it('initially renders all text in English', () => {
+      setup();
+      expect(
+        screen.getByRole('heading', { name: en.signUp })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: en.signUp })
+      ).toBeInTheDocument();
+      expect(screen.getByLabelText(en.username)).toBeInTheDocument();
+      expect(screen.getByLabelText(en.email)).toBeInTheDocument();
+      expect(screen.getByLabelText(en.password)).toBeInTheDocument();
+      expect(screen.getByLabelText(en.passwordRepeat)).toBeInTheDocument();
+    });
+    it('renders text in Turkish when language is changed to Turkish', () => {
+      setup();
+      userEvent.click(turkishToggle);
+
+      expect(
+        screen.getByRole('heading', { name: tr.signUp })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: tr.signUp })
+      ).toBeInTheDocument();
+      expect(screen.getByLabelText(tr.username)).toBeInTheDocument();
+      expect(screen.getByLabelText(tr.email)).toBeInTheDocument();
+      expect(screen.getByLabelText(tr.password)).toBeInTheDocument();
+      expect(screen.getByLabelText(tr.passwordRepeat)).toBeInTheDocument();
+    });
+    it('renders text in English when language is changed to English', () => {
+      setup();
+
+      userEvent.click(turkishToggle);
+      userEvent.click(englishToggle);
+
+      expect(
+        screen.getByRole('heading', { name: en.signUp })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: en.signUp })
+      ).toBeInTheDocument();
+      expect(screen.getByLabelText(en.username)).toBeInTheDocument();
+      expect(screen.getByLabelText(en.email)).toBeInTheDocument();
+      expect(screen.getByLabelText(en.password)).toBeInTheDocument();
+      expect(screen.getByLabelText(en.passwordRepeat)).toBeInTheDocument();
+    });
+
+    it('displays password mismatch validation message in Turkish', () => {
+      setup();
+      userEvent.click(turkishToggle);
+
+      userEvent.type(passwordInput, 'P4ss');
+      const validationMessageInTurkish = screen.queryByText(
+        tr.passwordMismatchValidation
+      );
+      expect(validationMessageInTurkish).toBeInTheDocument();
+    });
+
+    it('sends accept language header as en for outgoing request', async () => {
+      setup();
+
+      userEvent.type(passwordInput, 'P4ssword');
+      userEvent.type(passwordRepeatInput, 'P4ssword');
+      const button = screen.getByRole('button', { name: en.signUp });
+      userEvent.click(button);
+      const form = screen.queryByTestId('form-sign-up');
+      await waitForElementToBeRemoved(form);
+      expect(acceptLanguageHeader).toBe('en');
+    });
+
+    it('sends accept language header as tr when outgoing request config is changed to Turkish', async () => {
+      setup();
+
+      userEvent.type(passwordInput, 'P4ssword');
+      userEvent.type(passwordRepeatInput, 'P4ssword');
+      const button = screen.getByRole('button', { name: en.signUp });
+      userEvent.click(turkishToggle);
+      userEvent.click(button);
+      const form = screen.queryByTestId('form-sign-up');
+      await waitForElementToBeRemoved(form);
+      expect(acceptLanguageHeader).toBe('tr');
+    });
   });
 });

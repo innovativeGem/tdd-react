@@ -2,6 +2,7 @@ import { Component } from 'react';
 import axios from 'axios';
 import Input from '../components/Input';
 import { withTranslation } from 'react-i18next';
+import { signUp } from '../api/apiCalls';
 
 class SignUpPage extends Component {
   state = {
@@ -34,7 +35,7 @@ class SignUpPage extends Component {
     };
     this.setState({ apiProgress: true });
     try {
-      await axios.post('/api/1.0/users', body);
+      await signUp(body);
       this.setState({ signUpSuccess: true });
     } catch (error) {
       if (error.response.status === 400) {
@@ -54,7 +55,7 @@ class SignUpPage extends Component {
     }
 
     const passwordMismatch =
-      password !== passwordRepeat ? 'Password mismatch' : '';
+      password !== passwordRepeat ? t('passwordMismatchValidation') : '';
 
     return (
       <div className='col-lg-6 offset-lg-3 col-md-8 offset-md-2'>
