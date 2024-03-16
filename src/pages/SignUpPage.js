@@ -3,6 +3,8 @@ import axios from 'axios';
 import Input from '../components/Input';
 import { withTranslation } from 'react-i18next';
 import { signUp } from '../api/apiCalls';
+import Alert from '../components/Alert';
+import Spinner from '../components/Spinner';
 
 class SignUpPage extends Component {
   state = {
@@ -63,7 +65,7 @@ class SignUpPage extends Component {
         data-testid='signup-page'
       >
         {!signUpSuccess && (
-          <form className='card mt-5' data-testid='form-sign-up'>
+          <form className='card' data-testid='form-sign-up'>
             <div className='card-header'>
               <h1 className='text-center'>{t('signUp')}</h1>
             </div>
@@ -100,12 +102,7 @@ class SignUpPage extends Component {
                   disabled={disabled || apiProgress}
                   onClick={(e) => this.submit(e)}
                 >
-                  {apiProgress && (
-                    <span
-                      className='spinner-border spinner-border-sm'
-                      role='status'
-                    ></span>
-                  )}
+                  {apiProgress && <Spinner />}
                   {t('signUp')}
                 </button>
               </div>
@@ -113,9 +110,7 @@ class SignUpPage extends Component {
           </form>
         )}
         {signUpSuccess && (
-          <div className='alert alert-success mt-3'>
-            Please check your e-mail to activate your account
-          </div>
+          <Alert>Please check your e-mail to activate your account</Alert>
         )}
       </div>
     );

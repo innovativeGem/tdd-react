@@ -8,11 +8,11 @@ let counter = 0;
 // Setup MSW server
 const server = setupServer(
   // Mock API call to intercept POST request
-  rest.post('/api/1.0/users/token/:token', (req, res, ctx) => {
-    if (req.params.token === '5678') {
+  rest.post('/api/1.0/users/token/:id', (req, res, ctx) => {
+    counter += 1;
+    if (req.params.id === '5678') {
       return res(ctx.status(400));
     }
-    counter += 1;
     return res(ctx.status(200));
   })
 );
@@ -27,7 +27,7 @@ afterAll(() => server.close());
 
 describe('Account Activation Page', () => {
   const setup = (token) => {
-    const match = { params: { token } };
+    const match = { params: { id: token } };
     render(<AccountActivationPage match={match} />);
   };
   it('displays activation success message if token is valid', async () => {
@@ -46,5 +46,33 @@ describe('Account Activation Page', () => {
     setup('5678');
     const message = await screen.findByText('Activation failure');
     expect(message).toBeInTheDocument();
+  });
+
+  it('sends requests to backend when token is changed', async () => {
+    const match = { params: { token: '1234' } };
+    const { rerender } = render(<AccountActivationPage match={match} />);
+    await screen.findByText('Account is activated');
+    match.params.id = '5678';
+    rerender(<AccountActivationPage match={match} />);
+    await screen.findByText('Activation failure');
+    expect(counter).toBe(2);
+  });
+
+  it('displays spinner when activation api call is in progress', async () => {
+    const match = { params: { token: '1234' } };
+    const { rerender } = render(<AccountActivationPage match={match} />);
+    await screen.findByText('Account is activated');
+    match.params.id = '5678';
+    rerender(<AccountActivationPage match={match} />);
+    const spinner = screen.queryByRole('status');
+    expect(spinner).toBeInTheDocument();
+    await screen.findByText('Activation failure');
+    expect(spinner).not.toBeInTheDocument();
+  });
+
+  it('displays spinner after second api call changed token', async () => {
+    setup('5678');
+    const spinner = screen.queryByRole('status');
+    expect(spinner).toBeInTheDocument();
   });
 });
