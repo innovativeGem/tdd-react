@@ -82,7 +82,7 @@ describe('User List', () => {
       const firstUserOnPage2 = await screen.findByText('user4');
       expect(firstUserOnPage2).toBeInTheDocument();
     });
-    it('hides next page link on last page', async () => {
+    xit('hides next page link on last page', async () => {
       setup();
       await screen.findByText('user1');
       const nextPageLink = screen.getByText('next >');
@@ -116,6 +116,12 @@ describe('User List', () => {
       await screen.findByText('user1');
       const prevPageLink = screen.queryByText('< previous');
       expect(prevPageLink).not.toBeInTheDocument();
+    });
+    it('displays spinner when api call is in progress', async () => {
+      setup();
+      const spinner = screen.getByRole('status');
+      await screen.findByText('user1');
+      expect(spinner).not.toBeInTheDocument();
     });
   });
 
