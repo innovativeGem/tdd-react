@@ -3,8 +3,11 @@ import Input from '../components/Input';
 import Spinner from '../components/Spinner';
 import { login } from '../api/apiCalls';
 import Alert from '../components/Alert';
+import { useTranslation } from 'react-i18next';
+import ButtonWithProgress from '../components/ButtonWithProgress';
 
-const LoginPage = () => {
+const LoginPage = ({ history }) => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState();
   const [password, setPassword] = useState();
   const [pendingApiCall, setPendingApiCall] = useState(false);
@@ -21,8 +24,8 @@ const LoginPage = () => {
     setPendingApiCall(true);
     async function submitData() {
       try {
-        const response = await login({ email, password });
-        console.log(response);
+        await login({ email, password });
+        history.push('/');
       } catch (error) {
         setErrorMessage(error.response.data.message);
       }
@@ -37,30 +40,29 @@ const LoginPage = () => {
     >
       <form className='card'>
         <div className='card-header'>
-          <h1 className='text-center'>Login</h1>
+          <h1 className='text-center'>{t('login')}</h1>
         </div>
         <div className='card-body'>
           <Input
             id='email'
-            label='E-mail'
+            label={t('email')}
             onChange={(e) => setEmail(e.target.value)}
           />
           <Input
             id='password'
-            label='Password'
+            label={t('password')}
             type='password'
             onChange={(e) => setPassword(e.target.value)}
           />
           {errorMessage && <Alert type='danger'>{errorMessage}</Alert>}
           <div className='text-center'>
-            <button
-              className='btn btn-primary'
+            <ButtonWithProgress
+              disabled={disabled}
+              apiProgress={pendingApiCall}
               onClick={onSubmit}
-              disabled={disabled || pendingApiCall}
             >
-              {pendingApiCall && <Spinner />}
-              Login
-            </button>
+              {t('login')}
+            </ButtonWithProgress>
           </div>
         </div>
       </form>

@@ -21,4 +21,10 @@ const UserListItem = (props) => {
   );
 };
 
+/**
+ * To use route parameters for a child component (which is not directly rendered by <Route>)
+ * use withRouter(<YourComponent>) HOC.
+ * You will receive 'history' as a prop, which can then be used to navigate.
+ */
+
 export default withRouter(UserListItem);
