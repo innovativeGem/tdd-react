@@ -24,6 +24,16 @@ const server = setupServer(
   }),
   rest.get('/api/1.0/users', (req, res, ctx) => {
     return res(ctx.status(200), ctx.json(page1));
+  }),
+  rest.get('/api/1.0/users/:id', (req, res, ctx) => {
+    return res(
+      ctx.json({
+        id: 1,
+        username: 'user1',
+        email: 'user1@mail.com',
+        image: null,
+      })
+    );
   })
 );
 

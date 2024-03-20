@@ -12,6 +12,29 @@ import en from '../locale/en.json';
 import tr from '../locale/tr.json';
 import LanguageSelector from '../components/LanguageSelector';
 
+let requestBody;
+let button, usernameInput, emailInput, passwordInput, passwordRepeatInput;
+let counter = 0;
+let acceptLanguageHeader;
+// Setup MSW server
+const server = setupServer(
+  // Mock API call to intercept POST request
+  rest.post('/api/1.0/users', (req, res, ctx) => {
+    requestBody = req.body;
+    counter += 1;
+    acceptLanguageHeader = req.headers.get('Accept-Language');
+    return res(ctx.status(200));
+  })
+);
+
+beforeEach(() => {
+  counter = 0;
+  server.resetHandlers();
+});
+
+beforeAll(() => server.listen());
+afterAll(() => server.close());
+
 describe('Sign Up Page', () => {
   describe('Layout', () => {
     it('has header', () => {
@@ -68,29 +91,6 @@ describe('Sign Up Page', () => {
       expect(button).toBeDisabled();
     });
   });
-
-  let requestBody;
-  let button, usernameInput, emailInput, passwordInput, passwordRepeatInput;
-  let counter = 0;
-  let acceptLanguageHeader;
-  // Setup MSW server
-  const server = setupServer(
-    // Mock API call to intercept POST request
-    rest.post('/api/1.0/users', (req, res, ctx) => {
-      requestBody = req.body;
-      counter += 1;
-      acceptLanguageHeader = req.headers.get('Accept-Language');
-      return res(ctx.status(200));
-    })
-  );
-
-  beforeEach(() => {
-    counter = 0;
-    server.resetHandlers();
-  });
-
-  beforeAll(() => server.listen());
-  afterAll(() => server.close());
 
   describe('Interactions', () => {
     const setup = () => {
