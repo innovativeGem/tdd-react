@@ -4,8 +4,7 @@ import { login } from '../api/apiCalls';
 import Alert from '../components/Alert';
 import { useTranslation } from 'react-i18next';
 import ButtonWithProgress from '../components/ButtonWithProgress';
-import { AuthContext } from '../state/AuthContextWrapper';
-import { useContext } from 'react';
+import { useDispatch } from 'react-redux';
 
 const LoginPage = ({ history }) => {
   const { t } = useTranslation();
@@ -13,7 +12,7 @@ const LoginPage = ({ history }) => {
   const [password, setPassword] = useState();
   const [pendingApiCall, setPendingApiCall] = useState(false);
   const [errorMessage, setErrorMessage] = useState();
-  const auth = useContext(AuthContext);
+  const dispatch = useDispatch();
 
   let disabled = !(email && password);
 
@@ -28,9 +27,11 @@ const LoginPage = ({ history }) => {
       try {
         const response = await login({ email, password });
         history.push('/');
-        auth.onLoginSuccess({
-          isLoggedIn: true,
-          id: response.data.id,
+        dispatch({
+          type: 'login-success',
+          payload: {
+            id: response.data.id,
+          },
         });
       } catch (error) {
         setErrorMessage(error.response.data.message);

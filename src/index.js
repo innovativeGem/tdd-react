@@ -4,14 +4,15 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { BrowserRouter as Router } from 'react-router-dom';
-import AuthContextWrapper from './state/AuthContextWrapper';
+import { Provider } from 'react-redux';
+import createStore from './state/store';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <Router>
-    <AuthContextWrapper>
+    <Provider store={createStore()}>
       <App />
-    </AuthContextWrapper>
+    </Provider>
   </Router>
 );
 
