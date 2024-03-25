@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import LoginPage from './LoginPage';
 import en from '../locale/en.json';
 import tr from '../locale/tr.json';
+import storage from '../state/storage';
 
 let requestBody,
   counter = 0,
@@ -31,6 +32,18 @@ beforeEach(() => {
 
 beforeAll(() => server.listen());
 afterAll(() => server.close());
+
+const loginSuccess = rest.post('/api/1.0/auth', (req, res, ctx) => {
+  return res(
+    ctx.status(200),
+    ctx.json({
+      id: '5',
+      username: 'user5',
+      image: null,
+      token: 'abcdefg',
+    })
+  );
+});
 
 describe('Login page', () => {
   describe('Layout', () => {
@@ -74,11 +87,11 @@ describe('Login page', () => {
   describe('Interactions', () => {
     let emailInput, passwordInput, button;
 
-    const setup = () => {
+    const setup = (email = 'user100@mail.com') => {
       render(<LoginPage />);
       emailInput = screen.getByLabelText('E-mail');
       passwordInput = screen.getByLabelText('Password');
-      userEvent.type(emailInput, 'user100@mail.com');
+      userEvent.type(emailInput, email);
       userEvent.type(passwordInput, 'P4ssword');
       button = screen.getByRole('button', { name: 'Login' });
     };
@@ -137,6 +150,27 @@ describe('Login page', () => {
       const errorMessage = await screen.findByText('Incorrect credentials');
       userEvent.type(passwordInput, 'new4ssword');
       expect(errorMessage).not.toBeInTheDocument();
+    });
+    it('stores id, username and image in storage', async () => {
+      server.use(loginSuccess);
+      setup('user5@mail.com');
+      userEvent.click(button);
+      const spinner = screen.getByRole('status');
+      await waitForElementToBeRemoved(spinner);
+      const storedState = storage.getItem('auth');
+      const objectFields = Object.keys(storedState);
+      expect(objectFields.includes('id')).toBeTruthy();
+      expect(objectFields.includes('username')).toBeTruthy();
+      expect(objectFields.includes('image')).toBeTruthy();
+    });
+    it('stores authorization header value in the storage', async () => {
+      server.use(loginSuccess);
+      setup('user5@mail.com');
+      userEvent.click(button);
+      const spinner = screen.getByRole('status');
+      await waitForElementToBeRemoved(spinner);
+      const storedState = storage.getItem('auth');
+      expect(storedState.header).toBe('Bearer abcdefg');
     });
   });
 

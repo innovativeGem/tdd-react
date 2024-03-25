@@ -5,14 +5,16 @@ import Alert from '../components/Alert';
 import { useTranslation } from 'react-i18next';
 import ButtonWithProgress from '../components/ButtonWithProgress';
 import { useDispatch } from 'react-redux';
+import { useHistory } from 'react-router-dom/cjs/react-router-dom.min';
 
-const LoginPage = ({ history }) => {
+const LoginPage = () => {
   const { t } = useTranslation();
   const [email, setEmail] = useState();
   const [password, setPassword] = useState();
   const [pendingApiCall, setPendingApiCall] = useState(false);
   const [errorMessage, setErrorMessage] = useState();
   const dispatch = useDispatch();
+  const history = useHistory();
 
   let disabled = !(email && password);
 
@@ -30,7 +32,8 @@ const LoginPage = ({ history }) => {
         dispatch({
           type: 'login-success',
           payload: {
-            id: response.data.id,
+            ...response.data,
+            header: `Bearer ${response.data.token}`,
           },
         });
       } catch (error) {

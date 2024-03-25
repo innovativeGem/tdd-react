@@ -3,6 +3,7 @@ import App from '../src/App';
 import userEvent from '@testing-library/user-event';
 import { setupServer } from 'msw/node';
 import { rest } from 'msw';
+import storage from './state/storage';
 
 const page1 = {
   content: [
@@ -202,11 +203,11 @@ describe('Login', () => {
   it('stores loggedin state in local storage', async () => {
     setLoggedIn();
     await screen.findByTestId('home-page');
-    const state = JSON.parse(localStorage.getItem('auth'));
+    const state = storage.getItem('auth');
     expect(state.isLoggedIn).toBeTruthy();
   });
   it('shows loggedin layout on page reload', async () => {
-    localStorage.setItem('auth', JSON.stringify({ isLoggedIn: true }));
+    storage.setItem('auth', { isLoggedIn: true });
     setup('/');
     const myProfileLink = screen.queryByRole('link', {
       name: 'My Profile',
