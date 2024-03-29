@@ -14,6 +14,7 @@ const createAppStore = () => {
     window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()
   );
 
+  // Whenever store is updated, subscribe block is called and it will update the local storage aswell
   store.subscribe(() => {
     storage.setItem('auth', store.getState());
   });

@@ -126,4 +126,66 @@ describe('Profile Card', () => {
     await waitForElementToBeRemoved(spinner);
     expect(requestBody).toEqual({ username: 'user5' });
   });
+  it('hides edit mode after successful updateUser api call', async () => {
+    setupInEditMode();
+    userEvent.click(saveButton);
+    const edit = await screen.findByRole('button', { name: 'Edit' });
+    expect(edit).toBeInTheDocument();
+  });
+  it('displays updated username after successful updateUser api call', async () => {
+    setupInEditMode();
+    const input = screen.getByLabelText('Change your username');
+    userEvent.clear(input);
+    userEvent.type(input, 'user5-updated');
+    userEvent.click(saveButton);
+    const updatedUser = await screen.findByRole('heading', {
+      name: 'user5-updated',
+    });
+    expect(updatedUser).toBeInTheDocument();
+  });
+  it('displays last updated user name in the input field after successful updateUser api call', async () => {
+    setupInEditMode();
+    let input = screen.getByLabelText('Change your username');
+    userEvent.clear(input);
+    userEvent.type(input, 'new-username');
+    userEvent.click(saveButton);
+    const edit = await screen.findByRole('button', { name: 'Edit' });
+    userEvent.click(edit);
+    input = screen.getByLabelText('Change your username');
+    expect(input).toHaveValue('new-username');
+  });
+  it('hides edit mode on clicking cancel', async () => {
+    setupInEditMode();
+    const cancel = await screen.findByRole('button', { name: 'Cancel' });
+    userEvent.click(cancel);
+    const edit = await screen.findByRole('button', { name: 'Edit' });
+    expect(edit).toBeInTheDocument();
+  });
+  it('displays last updated username when clicking cancel', async () => {
+    setupInEditMode();
+    const input = screen.getByLabelText('Change your username');
+    userEvent.clear(input);
+    userEvent.type(input, 'new-username');
+    const cancel = await screen.findByRole('button', { name: 'Cancel' });
+    userEvent.click(cancel);
+    const username = await screen.findByRole('heading', {
+      name: 'user5',
+    });
+    expect(username).toBeInTheDocument();
+  });
+  it('displays last updated name after clicking cancel in second edit', async () => {
+    setupInEditMode();
+    const input = screen.getByLabelText('Change your username');
+    userEvent.clear(input);
+    userEvent.type(input, 'new-username');
+    userEvent.click(saveButton);
+    const edit = await screen.findByRole('button', { name: 'Edit' });
+    userEvent.click(edit);
+    const cancel = await screen.findByRole('button', { name: 'Cancel' });
+    userEvent.click(cancel);
+    const header = await screen.findByRole('heading', {
+      name: 'new-username',
+    });
+    expect(header).toBeInTheDocument();
+  });
 });

@@ -1,3 +1,5 @@
+// Redundant component. Just use it as reference
+
 import { useState, createContext } from 'react';
 
 export const AuthContext = createContext();

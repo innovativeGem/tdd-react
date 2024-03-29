@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import defaultProfile from '../assets/profile.png';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import Input from './Input';
 import { updateUser } from '../api/apiCalls';
 import ButtonWithProgress from './ButtonWithProgress';
@@ -8,10 +8,13 @@ import ButtonWithProgress from './ButtonWithProgress';
 const ProfileCard = ({ user }) => {
   const [isEditMode, setEditMode] = useState(false);
   const [apiProgress, setApiProgress] = useState(false);
-  const [newUsername, setNewUsername] = useState(user.username);
+  const [newUsername, setNewUsername] = useState(user?.username);
 
-  const { id, header } = useSelector((store) => ({
+  const dispatch = useDispatch();
+
+  const { id, username, header } = useSelector((store) => ({
     id: store.id,
+    username: store.username,
     header: store.header,
   }));
 
@@ -19,8 +22,20 @@ const ProfileCard = ({ user }) => {
     setApiProgress(true);
     try {
       await updateUser(id, { username: newUsername }, header);
+      setEditMode(false);
+      dispatch({
+        type: 'user-update-success',
+        payload: {
+          username: newUsername,
+        },
+      });
     } catch (error) {}
     setApiProgress(false);
+  };
+
+  const onClickCancel = () => {
+    setEditMode(false);
+    setNewUsername(username);
   };
 
   let content;
@@ -31,7 +46,7 @@ const ProfileCard = ({ user }) => {
         <Input
           id='username'
           label='Change your username'
-          initialValue={user.username}
+          initialValue={newUsername}
           onChange={(e) => setNewUsername(e.target.value)}
         />
         <ButtonWithProgress
@@ -41,13 +56,15 @@ const ProfileCard = ({ user }) => {
         >
           Save
         </ButtonWithProgress>
-        <button className='btn btn-outline-secondary'>Cancel</button>
+        <button className='btn btn-outline-secondary' onClick={onClickCancel}>
+          Cancel
+        </button>
       </>
     );
   } else {
     content = (
       <>
-        <h3>{user?.username}</h3>
+        <h3>{username}</h3>
         {user?.id === id && (
           <button
             className='btn btn-outline-success'
