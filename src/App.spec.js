@@ -57,6 +57,9 @@ const server = setupServer(
   rest.post('/api/1.0/logout', (req, res, ctx) => {
     logoutCount += 1;
     return res(ctx.status(200));
+  }),
+  rest.delete('/api/1.0/users/:id', (req, res, ctx) => {
+    return res(ctx.status(200));
   })
 );
 
@@ -251,7 +254,12 @@ describe('Login', () => {
 describe('Logout', () => {
   let logoutLink;
   const setupLoggedIn = () => {
-    storage.setItem('auth', { id: 5, username: 'user5', isLoggedIn: true });
+    storage.setItem('auth', {
+      id: 5,
+      username: 'user5',
+      isLoggedIn: true,
+      header: 'auth header value',
+    });
     setup('/');
     logoutLink = screen.queryByRole('link', {
       name: 'Logout',
@@ -281,6 +289,34 @@ describe('Logout', () => {
     userEvent.click(user);
     await screen.findByRole('heading', { name: 'user-in-list' });
     expect(header).toBeFalsy();
+  });
+});
+
+describe('Delete user', () => {
+  let deleteButton;
+  const setupLoggedInUserPage = async () => {
+    storage.setItem('auth', {
+      id: 5,
+      username: 'user5',
+      isLoggedIn: true,
+      header: 'auth header value',
+    });
+    setup('/user/5');
+    deleteButton = await screen.findByRole('button', {
+      name: 'Delete My Account',
+    });
+  };
+  it('redirects to homepage after successfully deleting user account', async () => {
+    await setupLoggedInUserPage();
+    userEvent.click(deleteButton);
+    userEvent.click(screen.queryByRole('button', { name: 'Yes' }));
+    await screen.findByTestId('home-page');
+  });
+  it('displays login link after deleting user', async () => {
+    await setupLoggedInUserPage();
+    userEvent.click(deleteButton);
+    userEvent.click(screen.queryByRole('button', { name: 'Yes' }));
+    await screen.findByRole('link', { name: 'Login' });
   });
 });
 

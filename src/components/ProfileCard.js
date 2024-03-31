@@ -1,18 +1,21 @@
 import { useState } from 'react';
+import { useHistory } from 'react-router-dom';
 import defaultProfile from '../assets/profile.png';
 import { useSelector, useDispatch } from 'react-redux';
 import Input from './Input';
-import { updateUser } from '../api/apiCalls';
+import { updateUser, deleteUser } from '../api/apiCalls';
 import ButtonWithProgress from './ButtonWithProgress';
 import Modal from './Modal';
 
 const ProfileCard = ({ user }) => {
   const [isEditMode, setEditMode] = useState(false);
-  const [apiProgress, setApiProgress] = useState(false);
+  const [deleteApiProgress, setDeleteApiProgress] = useState(false);
+  const [updateApiProgress, setUpdateApiProgress] = useState(false);
   const [newUsername, setNewUsername] = useState(user?.username);
   const [showModal, setShowModal] = useState(false);
 
   const dispatch = useDispatch();
+  const history = useHistory();
 
   const { id, username } = useSelector((store) => ({
     id: store.id,
@@ -20,7 +23,7 @@ const ProfileCard = ({ user }) => {
   }));
 
   const onClickSave = async () => {
-    setApiProgress(true);
+    setUpdateApiProgress(true);
     try {
       await updateUser(id, { username: newUsername });
       setEditMode(false);
@@ -31,12 +34,24 @@ const ProfileCard = ({ user }) => {
         },
       });
     } catch (error) {}
-    setApiProgress(false);
+    setUpdateApiProgress(false);
   };
 
   const onClickCancel = () => {
     setEditMode(false);
     setNewUsername(username);
+  };
+
+  const onClickDelete = async () => {
+    setDeleteApiProgress(true);
+    try {
+      await deleteUser(id);
+      history.push('/');
+      dispatch({
+        type: 'logout-success',
+      });
+    } catch (error) {}
+    setDeleteApiProgress(false);
   };
 
   let content;
@@ -51,9 +66,8 @@ const ProfileCard = ({ user }) => {
           onChange={(e) => setNewUsername(e.target.value)}
         />
         <ButtonWithProgress
-          className='btn btn-primary'
           onClick={onClickSave}
-          apiProgress={apiProgress}
+          apiProgress={updateApiProgress}
         >
           Save
         </ButtonWithProgress>
@@ -104,7 +118,14 @@ const ProfileCard = ({ user }) => {
         </div>
         <div className='card-body'>{content}</div>
       </div>
-      {showModal && <Modal />}
+      {showModal && (
+        <Modal
+          content='Are you sure you want to delete your account?'
+          onClickCancel={() => setShowModal(false)}
+          onClickConfirm={onClickDelete}
+          apiProgress={deleteApiProgress}
+        />
+      )}
     </>
   );
 };

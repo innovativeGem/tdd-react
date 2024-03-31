@@ -15,6 +15,11 @@ const server = setupServer(
     requestBody = req.body;
     header = req.headers.get('Authorization');
     return res(ctx.status(200));
+  }),
+  rest.delete('/api/1.0/users/:id', (req, res, ctx) => {
+    id = req.params.id;
+    header = req.headers.get('Authorization');
+    return res(ctx.status(200));
   })
 );
 
@@ -222,5 +227,44 @@ describe('Profile Card', () => {
       screen.queryByRole('button', { name: 'Cancel' })
     ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Yes' })).toBeInTheDocument();
+  });
+  it('hides modal on clicking cancel', async () => {
+    setup();
+    const deleteButton = screen.queryByRole('button', {
+      name: 'Delete My Account',
+    });
+    userEvent.click(deleteButton);
+    const cancelButton = screen.queryByRole('button', { name: 'Cancel' });
+    userEvent.click(cancelButton);
+    let modal = screen.queryByTestId('modal');
+    expect(modal).not.toBeInTheDocument();
+  });
+  it('displays spinner while api call is in progress', async () => {
+    setup();
+    let spinner = screen.queryByRole('status');
+    const deleteButton = screen.queryByRole('button', {
+      name: 'Delete My Account',
+    });
+    userEvent.click(deleteButton);
+    expect(spinner).not.toBeInTheDocument();
+    const confirmButton = screen.queryByRole('button', { name: 'Yes' });
+    userEvent.click(confirmButton);
+    spinner = screen.getByRole('status');
+    expect(spinner).toBeInTheDocument();
+    await waitForElementToBeRemoved(spinner);
+  });
+  it('sends logged in user id and authorization header in delete api call', async () => {
+    setup();
+    const deleteButton = screen.queryByRole('button', {
+      name: 'Delete My Account',
+    });
+    userEvent.click(deleteButton);
+    const confirmButton = screen.queryByRole('button', { name: 'Yes' });
+    userEvent.click(confirmButton);
+    const spinner = screen.getByRole('status');
+    expect(spinner).toBeInTheDocument();
+    await waitForElementToBeRemoved(spinner);
+    expect(header).toBe('authorization header value');
+    expect(id).toBe('5');
   });
 });

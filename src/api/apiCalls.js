@@ -32,10 +32,14 @@ export const login = (body) => {
   return axios.post('/api/1.0/auth', body);
 };
 
-export const updateUser = (id, body, header) => {
+export const updateUser = (id, body) => {
   return axios.put(`/api/1.0/users/${id}`, body);
 };
 
 export const logout = () => {
   return axios.post('/api/1.0/logout');
+};
+
+export const deleteUser = (id) => {
+  return axios.delete(`/api/1.0/users/${id}`);
 };
