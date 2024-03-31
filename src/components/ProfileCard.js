@@ -6,6 +6,7 @@ import Input from './Input';
 import { updateUser, deleteUser } from '../api/apiCalls';
 import ButtonWithProgress from './ButtonWithProgress';
 import Modal from './Modal';
+import { logoutSuccess, userUpdateSuccess } from '../state/authActions';
 
 const ProfileCard = ({ user }) => {
   const [isEditMode, setEditMode] = useState(false);
@@ -27,12 +28,11 @@ const ProfileCard = ({ user }) => {
     try {
       await updateUser(id, { username: newUsername });
       setEditMode(false);
-      dispatch({
-        type: 'user-update-success',
-        payload: {
+      dispatch(
+        userUpdateSuccess({
           username: newUsername,
-        },
-      });
+        })
+      );
     } catch (error) {}
     setUpdateApiProgress(false);
   };
@@ -47,9 +47,7 @@ const ProfileCard = ({ user }) => {
     try {
       await deleteUser(id);
       history.push('/');
-      dispatch({
-        type: 'logout-success',
-      });
+      dispatch(logoutSuccess());
     } catch (error) {}
     setDeleteApiProgress(false);
   };
