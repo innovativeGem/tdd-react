@@ -8,6 +8,10 @@ const reducer = (state, action) => {
       username: action.payload.username,
     };
     return newState;
+  } else if (action.type === 'logout-success') {
+    return {
+      isLoggedIn: false,
+    };
   }
   return state;
 };

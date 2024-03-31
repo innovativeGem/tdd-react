@@ -188,4 +188,39 @@ describe('Profile Card', () => {
     });
     expect(header).toBeInTheDocument();
   });
+  it('displays delete button for logged in user', async () => {
+    setup();
+    const button = screen.getByRole('button', { name: 'Delete My Account' });
+    expect(button).toBeInTheDocument();
+  });
+  it('does not displays delet button for other users', async () => {
+    setup({ id: 2, username: 'user2' });
+    const button = screen.queryByRole('button', { name: 'Delete My Account' });
+    expect(button).not.toBeInTheDocument();
+  });
+  it('displays modal when clicing delete button', async () => {
+    setup();
+    let modal = screen.queryByTestId('modal');
+    expect(modal).not.toBeInTheDocument();
+    const deleteButton = screen.getByRole('button', {
+      name: 'Delete My Account',
+    });
+    userEvent.click(deleteButton);
+    modal = await screen.findByTestId('modal');
+    expect(modal).toBeInTheDocument();
+  });
+  it('displays confirmation message and cancel and yes buttons in modal', async () => {
+    setup();
+    const deleteButton = screen.queryByRole('button', {
+      name: 'Delete My Account',
+    });
+    userEvent.click(deleteButton);
+    expect(
+      screen.getByText('Are you sure you want to delete your account?')
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Cancel' })
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Yes' })).toBeInTheDocument();
+  });
 });

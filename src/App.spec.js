@@ -19,6 +19,9 @@ const page1 = {
   totalPages: 0,
 };
 
+let logoutCount = 0;
+let header;
+
 const server = setupServer(
   rest.post('/api/1.0/users/token/:token', (req, res, ctx) => {
     return res(ctx.status(200));
@@ -28,6 +31,17 @@ const server = setupServer(
   }),
   rest.get('/api/1.0/users/:id', (req, res, ctx) => {
     const id = Number.parseInt(req.params.id);
+    header = req.headers.get('Authorization');
+    if (id === 1) {
+      return res(
+        ctx.json({
+          id: 1,
+          username: 'user-in-list',
+          email: 'user-in-list@mail.com',
+          image: null,
+        })
+      );
+    }
     return res(
       ctx.json({
         id: id,
@@ -39,10 +53,15 @@ const server = setupServer(
   }),
   rest.post('/api/1.0/auth', (req, res, ctx) => {
     return res(ctx.status(200), ctx.json({ id: 5, username: 'user5' }));
+  }),
+  rest.post('/api/1.0/logout', (req, res, ctx) => {
+    logoutCount += 1;
+    return res(ctx.status(200));
   })
 );
 
 beforeEach(() => {
+  logoutCount = 0;
   server.resetHandlers();
 });
 
@@ -213,6 +232,55 @@ describe('Login', () => {
       name: 'My Profile',
     });
     expect(myProfileLink).toBeInTheDocument();
+  });
+  it('refreshes user page from another user to the logged in user after clicking My Profile', async () => {
+    storage.setItem('auth', { id: 5, username: 'user5', isLoggedIn: true });
+    setup('/');
+    const user = await screen.findByText('user-in-list');
+    userEvent.click(user);
+    await screen.findByRole('heading', { name: 'user-in-list' });
+    const myProfileLink = screen.queryByRole('link', {
+      name: 'My Profile',
+    });
+    userEvent.click(myProfileLink);
+    const header = await screen.findByRole('heading', { name: 'user5' });
+    expect(header).toBeInTheDocument();
+  });
+});
+
+describe('Logout', () => {
+  let logoutLink;
+  const setupLoggedIn = () => {
+    storage.setItem('auth', { id: 5, username: 'user5', isLoggedIn: true });
+    setup('/');
+    logoutLink = screen.queryByRole('link', {
+      name: 'Logout',
+    });
+  };
+  it('displays logout link for logged in user', async () => {
+    setupLoggedIn();
+    expect(logoutLink).toBeInTheDocument();
+  });
+  it('displays login link in navbar after clicking logout', async () => {
+    setupLoggedIn();
+    userEvent.click(logoutLink);
+    const loginLink = await screen.findByRole('link', { name: 'Login' });
+    expect(loginLink).toBeInTheDocument();
+  });
+  it('sends request to backend after clicking logout', async () => {
+    setupLoggedIn();
+    userEvent.click(logoutLink);
+    await screen.findByRole('link', { name: 'Login' });
+    expect(logoutCount).toBe(1);
+  });
+  it('removes authorization header from api calls after clicking logout', async () => {
+    setupLoggedIn();
+    userEvent.click(logoutLink);
+    await screen.findByRole('link', { name: 'Login' });
+    const user = screen.queryByText('user-in-list');
+    userEvent.click(user);
+    await screen.findByRole('heading', { name: 'user-in-list' });
+    expect(header).toBeFalsy();
   });
 });
 

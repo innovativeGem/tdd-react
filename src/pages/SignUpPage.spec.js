@@ -10,7 +10,6 @@ import { setupServer } from 'msw/node';
 import { rest } from 'msw';
 import en from '../locale/en.json';
 import tr from '../locale/tr.json';
-import LanguageSelector from '../components/LanguageSelector';
 
 let requestBody;
 let button, usernameInput, emailInput, passwordInput, passwordRepeatInput;
